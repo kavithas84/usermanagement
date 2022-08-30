@@ -4,6 +4,7 @@ package com.kavithas84.usermgmt.controller;
 import com.kavithas84.usermgmt.entity.UserAccount;
 import com.kavithas84.usermgmt.error.UserNotFoundException;
 import com.kavithas84.usermgmt.repository.UserAccountRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +28,15 @@ class UserAccountController {
     // end::get-aggregate-root[]
 
     @PostMapping("/users")
-    UserAccount newEmployee(@RequestBody UserAccount newUser) {
+    @ResponseStatus(HttpStatus.CREATED)
+    UserAccount newUser(@RequestBody UserAccount newUser) {
+        return repository.save(newUser);
+    }
+
+    @PostMapping("/users/authenticate")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    UserAccount authenticateUser(@RequestBody UserAccount newUser) {
+        System.out.println("########### In AUTHENTICATE ##############");
         return repository.save(newUser);
     }
 

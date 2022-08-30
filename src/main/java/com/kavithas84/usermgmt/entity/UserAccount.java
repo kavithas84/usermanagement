@@ -1,5 +1,6 @@
 package com.kavithas84.usermgmt.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 
 import javax.persistence.Entity;
@@ -12,6 +13,7 @@ public class UserAccount {
     @GeneratedValue
     private Long id;
     private String name;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     public Long getId() {
@@ -42,7 +44,7 @@ public class UserAccount {
 
     public UserAccount(String name, String password) {
         this.name = name;
-        this.password = password;
+        setPassword(password);
     }
 
     public UserAccount() {
@@ -53,7 +55,7 @@ public class UserAccount {
         return "UserAccount{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", password='" + password + '\'' +
+
                 '}';
     }
 }
