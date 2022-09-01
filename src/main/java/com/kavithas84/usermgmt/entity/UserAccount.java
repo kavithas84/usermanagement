@@ -1,7 +1,5 @@
 package com.kavithas84.usermgmt.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -20,8 +18,9 @@ public class UserAccount {
     @Column(unique=true)
     private String name;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = "Password is mandatory")
+    @Size(min = 6,  message = "Password must be atleast 6 characters long")
     private String password;
 
     public Long getId() {

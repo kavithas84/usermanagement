@@ -58,7 +58,6 @@ class UserAccountController {
     @PostMapping("/users/authenticate")
     @ResponseStatus(HttpStatus.OK)
     UserAccount authenticateUser(@RequestBody UserAccount loginUser) {
-        System.out.println("########### In AUTHENTICATE ##############");
         List<UserAccount> existingUsers = repository.findByName(loginUser.getName());
 
         //check if user with the username exists.If not, throw user not found exception. If yes, authetiate password
