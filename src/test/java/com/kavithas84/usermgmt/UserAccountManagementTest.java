@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,6 +17,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -33,6 +35,8 @@ public class UserAccountManagementTest {
 
     @Autowired
     private UserAccountRepository repository;
+
+    Pbkdf2PasswordEncoder encoder = new Pbkdf2PasswordEncoder();
 
 
     @Test
@@ -68,9 +72,10 @@ public class UserAccountManagementTest {
 
     @Test
     public void testPostNewUser() throws Exception {
+        String asJsonString = asJsonString(new UserAccount("Emily Gilmore", "grandmother"));
         mvc.perform(MockMvcRequestBuilders
                         .post("/users")
-                        .content(asJsonString(new UserAccount("Emily Gilmore", "grandmother")))
+                        .content(asJsonString)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
@@ -84,7 +89,7 @@ public class UserAccountManagementTest {
                         .content(asJsonString(new UserAccount("Emily Gilmore", "grandmother")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isAccepted());
 //                .andExpect(MockMvcResultMatchers.jsonPath("$.id").exists());
     }
 
@@ -94,5 +99,14 @@ public class UserAccountManagementTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void matches() {
+        String result = this.encoder.encode("password");
+        String result2 = this.encoder.encode("password");
+        assertEquals(result.equals("password"),false);
+        assertFalse(result2.equals(result));
+        assertTrue(this.encoder.matches("password", result));
     }
 }

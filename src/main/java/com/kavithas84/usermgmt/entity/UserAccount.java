@@ -1,19 +1,27 @@
 package com.kavithas84.usermgmt.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Entity
 public class UserAccount {
     @Id
     @GeneratedValue
     private Long id;
+
+    @NotBlank(message = "Name is mandatory")
+    @Size(min = 2, max = 32, message = "Name must be between 2 and 32 characters long")
+    @Column(unique=true)
     private String name;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @NotBlank(message = "Password is mandatory")
     private String password;
 
     public Long getId() {
@@ -37,14 +45,13 @@ public class UserAccount {
     }
 
     public void setPassword(String password) {
-        Pbkdf2PasswordEncoder encoder = new Pbkdf2PasswordEncoder();
-        String result = encoder.encode("myPassword");
-        this.password = result;
+
+        this.password = password;
     }
 
     public UserAccount(String name, String password) {
         this.name = name;
-        setPassword(password);
+        this.password = password;
     }
 
     public UserAccount() {

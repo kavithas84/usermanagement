@@ -2,70 +2,100 @@ package com.kavithas84.usermgmt.controller;
 
 
 import com.kavithas84.usermgmt.entity.UserAccount;
+import com.kavithas84.usermgmt.error.UserAlreadyExistsException;
 import com.kavithas84.usermgmt.error.UserNotFoundException;
 import com.kavithas84.usermgmt.repository.UserAccountRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
+/**
+ * The controller class to handle the hhtp request. Maps the HTTP action to a relevant user action
+ *
+ */
 class UserAccountController {
 
     private final UserAccountRepository repository;
+    private final Pbkdf2PasswordEncoder encoder = new Pbkdf2PasswordEncoder();
+
 
     UserAccountController(UserAccountRepository repository) {
         this.repository = repository;
     }
 
 
-    // Aggregate root
-    // tag::get-aggregate-root[]
     @GetMapping("/users")
+    /**
+     * Returns the list of all users in the system.
+     * Mapped to the GET http request
+     */
     List<UserAccount> all() {
         return repository.findAll();
     }
-    // end::get-aggregate-root[]
 
     @PostMapping("/users")
     @ResponseStatus(HttpStatus.CREATED)
-    UserAccount newUser(@RequestBody UserAccount newUser) {
+    /**
+     * Creates a new user specified in the newUser object.
+     * VAlidates if a current user already exists with the give unique name.
+     */
+    UserAccount newUser(@Valid @RequestBody UserAccount newUser) {
+        String name = newUser.getName();
+        //check if user with existing name already exists
+        List<UserAccount> existingUsers = repository.findByName(name);
+        if (!existingUsers.isEmpty()) {
+            throw new UserAlreadyExistsException(name);
+        }
+        String encodedPassword = encoder.encode(newUser.getPassword());
+        newUser.setPassword(encodedPassword);
         return repository.save(newUser);
     }
 
     @PostMapping("/users/authenticate")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    UserAccount authenticateUser(@RequestBody UserAccount newUser) {
+    @ResponseStatus(HttpStatus.OK)
+    UserAccount authenticateUser(@RequestBody UserAccount loginUser) {
         System.out.println("########### In AUTHENTICATE ##############");
-        return repository.save(newUser);
+        List<UserAccount> existingUsers = repository.findByName(loginUser.getName());
+
+        //check if user with the username exists.If not, throw user not found exception. If yes, authetiate password
+        if (existingUsers.isEmpty()) {
+            throw new UserNotFoundException("User with provided username and password does not exist");
+        }
+
+        //validate password
+        if (existingUsers.get(0) != null) {
+            boolean passwordMatches = encoder.matches(loginUser.getPassword(), existingUsers.get(0).getPassword());
+            if (!passwordMatches) {
+                throw new UserNotFoundException("User with provided username and password does not exist");
+            }
+        }
+
+        return loginUser;
     }
 
     // Single item
 
-    @GetMapping("/users/{id}")
-    UserAccount one(@PathVariable Long id) {
+    @GetMapping("/users/{name}")
+    @ResponseStatus(HttpStatus.OK)
+    UserAccount one(@PathVariable String name) {
+        List<UserAccount> existingUsers = repository.findByName(name);
 
-        return repository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+        //check if user with the username exists.If not, throw user not found exception. if (existingUsers.isEmpty()) {
+        if (existingUsers.isEmpty() || existingUsers.get(0) == null) {
+            throw new UserNotFoundException("User with provided username does not exist");
+        }
+
+        return existingUsers.get(0);
     }
 
-    @PutMapping("/users/{id}")
-    UserAccount replaceUser(@RequestBody UserAccount newUser, @PathVariable Long id) {
 
-        return repository.findById(id)
-                .map(userAccount -> {
-                    userAccount.setName(newUser.getName());
-                    userAccount.setPassword(newUser.getPassword());
-                    return repository.save(userAccount);
-                })
-                .orElseGet(() -> {
-                    newUser.setId(id);
-                    return repository.save(newUser);
-                });
-    }
-
-    @DeleteMapping("/users/{id}")
-    void deleteUser(@PathVariable Long id) {
-        repository.deleteById(id);
+    @ResponseStatus(HttpStatus.OK)
+    @DeleteMapping("/users/{name}")
+    void deleteUser(@PathVariable String name) {
+        repository.deleteByName(name);
     }
 }
